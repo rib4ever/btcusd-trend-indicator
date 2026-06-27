@@ -1,5 +1,5 @@
 //@version=6
-indicator(title="BTCUSD MTF EMA Trend", shorttitle="MTF EMA", overlay=true)
+indicator(title="BTCUSD MTF EMA Trend", shorttitle="MTF EMA", overlay=true, scale=scale.right)
 
 // ── USER INPUTS ──────────────────────────────────────────────────────────────
 fast_len    = input.int(21,    "Fast EMA",        minval=1, group="EMA Settings")
