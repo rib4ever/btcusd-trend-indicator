@@ -22,12 +22,17 @@ ema_slow_15 = ta.ema(close, slow_len)
 
 // ── BIAS LOGIC ───────────────────────────────────────────────────────────────
 f_bias(price, f, m, s) =>
-    price > f and f > m and m > s ? 1 :
-    price < f and f < m and m < s ? -1 : 0
+    if price > f and f > m and m > s
+        1
+    else if price < f and f < m and m < s
+        -1
+    else
+        0
 
 bias_15 = f_bias(close,    ema_fast_15, ema_mid_15, ema_slow_15)
 bias_4h = f_bias(close_4h, ema_fast_4h, ema_mid_4h, ema_slow_4h)
 
+// Alignment score 0-3: count of correctly stacked relationships (15m and 4H)
 score_15 = (close      > ema_fast_15  ? 1 : 0) +
            (ema_fast_15 > ema_mid_15   ? 1 : 0) +
            (ema_mid_15  > ema_slow_15  ? 1 : 0)
@@ -40,9 +45,11 @@ score_4h = (close_4h   > ema_fast_4h  ? 1 : 0) +
 cross_up   = ta.crossover(ema_fast_15,  ema_mid_15)
 cross_down = ta.crossunder(ema_fast_15, ema_mid_15)
 
+// barstate.isconfirmed gates signals to bar close only — prevents repainting
 long_signal  = barstate.isconfirmed and cross_up   and bias_4h == 1  and close > ema_slow_15
 short_signal = barstate.isconfirmed and cross_down and bias_4h == -1 and close < ema_slow_15
 
+// Persist last signal direction for the dashboard table (survives across bars)
 var int last_direction = 0
 if long_signal
     last_direction := 1
@@ -55,9 +62,8 @@ plot(ema_mid_15,  "EMA 50",  color=color.new(color.orange, 0), linewidth=1)
 plot(ema_slow_15, "EMA 200", color=color.new(color.white,  0), linewidth=2)
 
 // ── BACKGROUND RENDERER ──────────────────────────────────────────────────────
-bgcolor(show_bg and bias_4h == 1  ? color.new(color.green, 90) :
-        show_bg and bias_4h == -1 ? color.new(color.red,   90) : na,
-        title="Trend Background")
+bg_col = not show_bg ? na : bias_4h == 1 ? color.new(color.green, 90) : bias_4h == -1 ? color.new(color.red, 90) : na
+bgcolor(bg_col, title="Trend Background")
 
 // ── ARROW RENDERER ───────────────────────────────────────────────────────────
 plotshape(show_arrows and long_signal,
